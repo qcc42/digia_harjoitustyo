@@ -1,6 +1,7 @@
 import pyautogui as pag
 import random
 from typing import Union
+import pyscreeze
 
 canvas_w = 1280
 canvas_h = 720
@@ -67,23 +68,40 @@ for i in square_positions:
     draw_square(*i, square_side, borders_lurd)
 
 #snap a screenshot of a square in order to know what to count
-square_coords = (int(square_positions[0][0] + canvas_xy[0]), int(square_positions[0][1] + canvas_xy[1]), 5, 5)
+square_coords = (int(square_positions[0][0] -3 + canvas_xy[0]), int(square_positions[0][1] - 3 + canvas_xy[1]), square_side, square_side)
 scr_sh = pag.screenshot(region = square_coords)
 scr_sh.save("scr_sh.png")
 
 #counts square occurances based on screenshot
 def getSquareCount() -> int:
-    occurances = pag.locateAllOnScreen(scr_sh, confidence=0.99, grayscale=False)
+    occurances = pag.locateAllOnScreen(scr_sh, confidence=0.99, grayscale=True)
     return len([i for i in occurances])
 
 #draws noise until square count is no longer correct
 def drawNoise(borders: Union[tuple, list] = (0, 0, pag.size()[0], pag.size()[1])) -> int:
     pag.moveTo(borders[0], borders[1])
-    while no_sq == getSquareCount():
-        pag.dragTo(random.randint(borders[0], borders[2]), random.randint(borders[1], borders[3]))
-    return getSquareCount()
+    try:
+        while getSquareCount():
+            pag.dragTo(random.randint(borders[0], borders[2]), random.randint(borders[1], borders[3]))
+    except pyscreeze.ImageNotFoundException:
+        pag.moveTo(canvas_center)
+        pag.press('t')
+        pag.click()
+        pag.write("No square found!")
+
+
+#fills the squares
+def fillSquares(square_coords: list, canvas_coords: list) -> None:
+    pag.press('b')
+    for i in square_coords:
+        x = i[0] + square_side//2 + canvas_coords[0]
+        y = i[1] + square_side//2 + canvas_coords[1]
+        pag.click(x, y)
 
 counted_occurances = getSquareCount()
+
+#check to see that the count was correct
+assert counted_occurances == no_sq
 
 #print the answer on the canvas
 canvas_center = [canvas_w//2 + canvas_xy[0], canvas_h//2 + canvas_xy[1]]
@@ -94,16 +112,18 @@ pag.write("Counted squares: " + str(counted_occurances))
 pag.sleep(1)
 pag.hotkey('ctrl', 'z')
 pag.press('esc')
-pag.press('p')
 
-#draw noise
-to_print = drawNoise(borders_lurd)
+fillSquares(square_positions, canvas_xy)
 
-#print new square count on canvas
-pag.moveTo(canvas_center)
-pag.press('t')
-pag.click()
-pag.write("Counted squares: " + str(to_print))
+try:
+    getSquareCount()
+except pyscreeze.ImageNotFoundException:
+    pag.moveTo(canvas_center)
+    pag.press('t')
+    pag.click()
+    pag.write("No square found!")
+
+
 
 
 
