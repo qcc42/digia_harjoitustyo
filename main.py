@@ -1,5 +1,6 @@
 import pyautogui as pag
 import random
+from typing import Union
 
 canvas_w = 1280
 canvas_h = 720
@@ -8,18 +9,18 @@ no_sq = random.randint(2, 5)
 offset_lc = [49, 43]
 
 #function for determining whether two squares (x1, y1) and (x2, y2) with certain side length collide
-def collides(x1, y1, x2, y2, side):
+def collides(x1: int, y1: int, x2: int, y2: int, side: int) -> bool:
     return not (x2 > x1 + side or y2 > y1 + side or x2 < x1 - side or y2 < y1 - side)
 
 #determines whether square in position x, y of size "side" collides wit any square defined a position array
-def collides_array(x, y, side, array):
+def collides_array(x: int, y: int, side: int, array: list) -> bool:
     for i in array:
         if collides(x, y, *i, side):
             return True
     return False
 
 #generic function for drawing a square in position (x, y), position is relative to canvas upper left corner
-def draw_square(x, y, side, borders = (0, 0, 0, 0)):
+def draw_square(x: int, y: int, side: int, borders: Union[list, tuple] = (0, 0, 0, 0)) -> None:
 
     pag.moveTo(x+borders[0], y+borders[1])
     pag.mouseDown()
@@ -28,7 +29,9 @@ def draw_square(x, y, side, borders = (0, 0, 0, 0)):
     pag.drag(-side, 0)
     pag.drag(0 , -side)
     pag.mouseUp()
+
 #------------------------------------- execution starts here----------------------------------#
+
 #open paint and set canvas size
 pag.hotkey('win', 'r')
 pag.write('mspaint')
@@ -69,15 +72,15 @@ scr_sh = pag.screenshot(region = square_coords)
 scr_sh.save("scr_sh.png")
 
 #counts square occurances based on screenshot
-def getSquareCount():
+def getSquareCount() -> int:
     occurances = pag.locateAllOnScreen(scr_sh, confidence=0.99, grayscale=False)
     return len([i for i in occurances])
 
 #draws noise until square count is no longer correct
-def drawNoise():
-    pag.moveTo(canvas_xy)
+def drawNoise(borders: Union[tuple, list] = (0, 0, pag.size()[0], pag.size()[1])) -> int:
+    pag.moveTo(borders[0], borders[1])
     while no_sq == getSquareCount():
-        pag.dragTo(random.randint(canvas_xy[0], canvas_xy[0] + canvas_w), random.randint(canvas_xy[1], canvas_xy[1] + canvas_h))
+        pag.dragTo(random.randint(borders[0], borders[2]), random.randint(borders[1], borders[3]))
     return getSquareCount()
 
 counted_occurances = getSquareCount()
@@ -94,7 +97,7 @@ pag.press('esc')
 pag.press('p')
 
 #draw noise
-to_print = drawNoise()
+to_print = drawNoise(borders_lurd)
 
 #print new square count on canvas
 pag.moveTo(canvas_center)
